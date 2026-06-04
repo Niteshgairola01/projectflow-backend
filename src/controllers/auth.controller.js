@@ -1,5 +1,5 @@
 import { HTTP_STATUS } from "../constants/httpStatus.js";
-import { registerUser, loginUser, refreshAccessToken, logOutUser } from "../services/auth.service.js";
+import { registerUser, loginUser, refreshAccessToken, logOutUser, getCurrentUser } from "../services/auth.service.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 
@@ -87,3 +87,21 @@ export const logout = asyncHandler(
             )
     }
 );
+
+export const me = asyncHandler(
+    async (req, res) => {
+        const userId = req.user?.userId;
+
+        const user = await getCurrentUser(userId);
+
+        return res
+            .status(HTTP_STATUS.OK)
+            .json(
+                new ApiResponse(
+                    HTTP_STATUS.OK,
+                    user,
+                    "User fetched successfully"
+                )
+            )
+    }
+)

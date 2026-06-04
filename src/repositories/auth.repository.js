@@ -34,3 +34,7 @@ export const clearRefreshToken = (userId) => {
         { refreshToken: null }
     );
 }
+
+export const findByIdWithoutRefreshToken = (userId) => {
+    return User.findById(userId).select('-refreshToken');
+}
