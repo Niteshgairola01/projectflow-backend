@@ -1,5 +1,5 @@
 import { HTTP_STATUS } from "../constants/httpStatus.js";
-import { registerUser, loginUser, refreshAccessToken } from "../services/auth.service.js";
+import { registerUser, loginUser, refreshAccessToken, logOutUser } from "../services/auth.service.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 
@@ -49,7 +49,7 @@ export const login = asyncHandler(
 
 export const refreshToken = asyncHandler(
     async (req, res) => {
-        const refreshToken = req.cookies.refreshToken;        
+        const refreshToken = req.cookies.refreshToken;
 
         const result = await refreshAccessToken(refreshToken);
 
@@ -62,5 +62,28 @@ export const refreshToken = asyncHandler(
                     "Access token refreshed"
                 )
             );
+    }
+);
+
+export const logout = asyncHandler(
+    async (req, res) => {
+        const refreshToken = req.cookies.refreshToken;
+
+        await logOutUser(refreshToken);
+
+        res.clearCookie("refreshToken", {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "strict"
+        });
+
+        return res
+            .status(HTTP_STATUS.OK)
+            .json(
+                new ApiResponse(
+                    HTTP_STATUS.OK,
+                    "User logged out successfully"
+                )
+            )
     }
 );

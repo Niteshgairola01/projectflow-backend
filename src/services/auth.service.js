@@ -1,5 +1,5 @@
 import bcrypt from "bcrypt";
-import { createUser, findByEmail, findByEmailWithPassword, findById, findByRefreshToken, updateRefreshToken } from "../repositories/auth.repository.js";
+import { clearRefreshToken, createUser, findByEmail, findByEmailWithPassword, findById, updateRefreshToken } from "../repositories/auth.repository.js";
 import ApiError from "../utils/ApiError.js";
 import { HTTP_STATUS } from "../constants/httpStatus.js";
 import { AUTH_CONFIG } from "../constants/auth.js";
@@ -98,5 +98,16 @@ export const refreshAccessToken = async (refreshToken) => {
 
     return {
         accessToken: newAccessToken
+    }
+}
+
+export const logOutUser = async (refreshToken) => {
+    if (!refreshToken) return;
+
+    // verify token
+    const decoded = verifyToken(refreshToken, JWT_CONFIG.JWT_REFRESH_SECRET);    
+
+    if (decoded.userId) {
+        await clearRefreshToken(decoded.userId);
     }
 }

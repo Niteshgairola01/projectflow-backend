@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { login, refreshToken, register } from "../../controllers/auth.controller.js";
+import { login, logout, refreshToken, register } from "../../controllers/auth.controller.js";
 import { validate } from "../../middlewares/validate.js";
 import { loginSchema, registerSchema } from "../../validations/auth.validation.js";
 
@@ -16,5 +16,7 @@ router.post("/login",
 );
 
 router.post("/refresh", refreshToken);
+
+router.post("/logout", logout);
 
 export default router;

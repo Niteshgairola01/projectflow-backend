@@ -27,3 +27,10 @@ export const updateRefreshToken = (userId, refreshToken) => {
 export const findByRefreshToken = (refreshToken) => {
     return User.findOne({ refreshToken });
 }
+
+export const clearRefreshToken = (userId) => {
+    return User.findByIdAndUpdate(
+        userId,
+        { refreshToken: null }
+    );
+}
