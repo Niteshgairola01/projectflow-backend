@@ -1,5 +1,6 @@
 import { ZodError } from "zod";
 import ApiError from "../utils/ApiError.js"
+import { HTTP_STATUS } from "../constants/httpStatus.js";
 
 export const validate = (schema) => {
     return (req, res, next) => {
@@ -12,7 +13,7 @@ export const validate = (schema) => {
             if (error instanceof ZodError) {
                 return next(
                     new ApiError(
-                        400,
+                        HTTP_STATUS.BAD_REQUEST,
                         error.issues.map(issue => issue.message).join(", ")
                     )
                 )

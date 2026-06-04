@@ -35,7 +35,7 @@ export const login = asyncHandler(
         )
 
         return res
-            .status(200)
+            .status(HTTP_STATUS.OK)
             .json(
                 new ApiResponse(
                     HTTP_STATUS.OK,

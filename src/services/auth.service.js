@@ -52,7 +52,7 @@ export const loginUser = async (data) => {
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
         throw new ApiError(
-            400,
+            HTTP_STATUS.BAD_REQUEST,
             "Invalid password"
         );
     }
