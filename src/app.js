@@ -3,6 +3,7 @@ import cors from "cors";
 import v1Router from "./routes/v1/index.js";
 import notFound from "./middlewares/notFound.js";
 import errorHandler from "./middlewares/errorHandler.js";
+import cookieParser from "cookie-parser";
 
 const app = express();
 
@@ -14,7 +15,14 @@ app.use(
     })
 );
 
+
+// cookie
+app.use(cookieParser());
+
+
+// express
 app.use(express.json());
+
 
 // routes
 app.use("/api/v1", v1Router)
