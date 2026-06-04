@@ -1,5 +1,5 @@
 import { HTTP_STATUS } from "../constants/httpStatus.js";
-import { registerUser, loginUser } from "../services/auth.service.js";
+import { registerUser, loginUser, refreshAccessToken } from "../services/auth.service.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 
@@ -45,4 +45,22 @@ export const login = asyncHandler(
             )
 
     }
-)
+);
+
+export const refreshToken = asyncHandler(
+    async (req, res) => {
+        const refreshToken = req.cookies.refreshToken;        
+
+        const result = await refreshAccessToken(refreshToken);
+
+        return res
+            .status(HTTP_STATUS.OK)
+            .json(
+                new ApiResponse(
+                    HTTP_STATUS.OK,
+                    result,
+                    "Access token refreshed"
+                )
+            );
+    }
+);

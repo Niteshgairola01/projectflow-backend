@@ -23,3 +23,7 @@ export const updateRefreshToken = (userId, refreshToken) => {
         { new: true }
     );
 }
+
+export const findByRefreshToken = (refreshToken) => {
+    return User.findOne({ refreshToken });
+}

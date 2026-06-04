@@ -1,9 +1,10 @@
 import bcrypt from "bcrypt";
-import { createUser, findByEmail, findByEmailWithPassword, updateRefreshToken } from "../repositories/auth.repository.js";
+import { createUser, findByEmail, findByEmailWithPassword, findById, findByRefreshToken, updateRefreshToken } from "../repositories/auth.repository.js";
 import ApiError from "../utils/ApiError.js";
 import { HTTP_STATUS } from "../constants/httpStatus.js";
 import { AUTH_CONFIG } from "../constants/auth.js";
-import { generateAccessToken, generateRefreshToken } from "../utils/jwt.js";
+import { generateAccessToken, generateRefreshToken, verifyToken } from "../utils/jwt.js";
+import { JWT_CONFIG } from "../constants/jwt.js";
 
 export const registerUser = async (data) => {
     const { name, email, password } = data;
@@ -70,5 +71,32 @@ export const loginUser = async (data) => {
         accessToken,
         refreshToken,
         user: userPayload
+    }
+}
+
+export const refreshAccessToken = async (refreshToken) => {
+    if (!refreshToken) {
+        throw new ApiError(
+            HTTP_STATUS.UNAUTHORIZED,
+            "Refresh token missing"
+        );
+    }
+
+    // veify jwt sign and expireation
+    const decoded = verifyToken(refreshToken, JWT_CONFIG.JWT_REFRESH_SECRET);
+
+    // fetch user from DB to check if token matches    
+    const user = await findById(decoded.userId);
+    if (!user) {
+        throw new ApiError(
+            HTTP_STATUS.UNAUTHORIZED,
+            "Invalid refresh token session"
+        );
+    }
+
+    const newAccessToken = generateAccessToken(user);
+
+    return {
+        accessToken: newAccessToken
     }
 }
