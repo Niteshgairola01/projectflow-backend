@@ -9,5 +9,6 @@ export const findWorkspacesByUserId = (userId) => {
 }
 
 export const findWorkspaceById = (id) => {
-    return Workspace.findById(id);
+    return Workspace.findById(id)
+        .populate("members.user", "name email")
 }

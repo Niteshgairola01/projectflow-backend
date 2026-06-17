@@ -66,7 +66,7 @@ export const getWorkspaceById = asyncHandler(
         }
 
         const isUserAMember = workspace.members.some(
-            member => member.user.toString() === userId
+            member => member.user._id.toString() === userId
         );
 
         if (!isUserAMember) {

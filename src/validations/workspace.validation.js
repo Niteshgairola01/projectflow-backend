@@ -11,5 +11,8 @@ export const createWorkspaceSchema = z.object({
         .max(
             50,
             "Workspace name is too long"
-        )
+        ),
+    color: z
+        .string()
+        .trim()
 });

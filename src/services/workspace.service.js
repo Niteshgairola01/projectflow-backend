@@ -2,7 +2,7 @@ import { WORKSPACE_ROLES } from "../constants/workspaceRoles.js";
 import { createWorkspace, findWorkspaceById, findWorkspacesByUserId } from "../repositories/workspace.repository.js";
 
 export const createNewWorkspace = async (data, userId) => {
-    const { name } = data;
+    const { name, color } = data;
 
     const workspaceData = {
         name,
@@ -12,7 +12,8 @@ export const createNewWorkspace = async (data, userId) => {
                 user: userId,
                 role: WORKSPACE_ROLES.OWNER
             }
-        ]
+        ],
+        color
     }
 
     return await createWorkspace(workspaceData);
