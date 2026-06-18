@@ -1,0 +1,150 @@
+import { HTTP_STATUS } from "../constants/httpStatus.js";
+import { createNewProject, fetchAllProjectsOfWorkspace, fetchProjectById } from "../services/project.service.js";
+import { fetchWorkspaceById } from "../services/workspace.service.js";
+import ApiError from "../utils/ApiError.js";
+import ApiResponse from "../utils/ApiResponse.js";
+import asyncHandler from "../utils/asyncHandler.js";
+
+// create
+export const createProject = asyncHandler(
+    async (req, res) => {
+        const userId = req.user?.userId;
+        const workspaceId = req.params?.workspaceId;
+
+        // check of workspace
+        if (!workspaceId) {
+            throw new ApiError(
+                HTTP_STATUS.NOT_FOUND,
+                "Workspace Id not found"
+            );
+        }
+
+        const workspace = await fetchWorkspaceById(workspaceId);
+
+        if (!workspace) {
+            throw new ApiError(
+                HTTP_STATUS.NOT_FOUND,
+                "Workspace not found"
+            );
+        }
+
+        // check if the user is memeber of the workspace or not
+        const isMember = workspace.members.some(member => member.user._id.toString() === userId);
+
+        if (!isMember) {
+            throw new ApiError(
+                HTTP_STATUS.FORBIDDEN,
+                "User is not a memeber of the workspace"
+            )
+        }
+
+        // create project and return response
+        const project = await createNewProject(req.body, workspaceId, userId);
+
+        return res
+            .status(HTTP_STATUS.CREATED)
+            .json(
+                new ApiResponse(
+                    HTTP_STATUS.CREATED,
+                    project,
+                    "Project created successfully"
+                )
+            )
+
+    }
+);
+
+// get all projects by workspace id
+export const getProjectsByWorkspaceId = asyncHandler(
+    async (req, res) => {
+        const workspaceId = req.params?.workspaceId;
+
+        // check of workspace
+        if (!workspaceId) {
+            throw new ApiError(
+                HTTP_STATUS.NOT_FOUND,
+                "Workspace Id not found"
+            );
+        }
+
+        const workspace = await fetchWorkspaceById(workspaceId);
+
+        if (!workspace) {
+            throw new ApiError(
+                HTTP_STATUS.NOT_FOUND,
+                "Workspace not found"
+            );
+        }
+
+        // fetch projects and return response
+        const projects = await fetchAllProjectsOfWorkspace(workspaceId);
+
+        return res
+            .status(HTTP_STATUS.OK)
+            .json(
+                new ApiResponse(
+                    HTTP_STATUS.OK,
+                    projects,
+                    "All projects for workspace fetched successfullly"
+                )
+            )
+    }
+);
+
+// get project by id
+export const getProjectById = asyncHandler(
+    async (req, res) => {
+
+        const workspaceId = req.params?.workspaceId;
+        const projectId = req.params?.projectId;
+
+        // check for workspace
+        if (!workspaceId) {
+            throw new ApiError(
+                HTTP_STATUS.NOT_FOUND,
+                "Workspace Id not found"
+            )
+        }
+
+        const workspace = await fetchWorkspaceById(workspaceId);
+
+        if (!workspace) {
+            throw new ApiError(
+                HTTP_STATUS.NOT_FOUND,
+                "Workspace not found"
+            );
+        }
+
+        // fetch project
+        const project = await fetchProjectById(projectId);
+
+        // check if project is present or not
+        if (!project) {
+            throw new ApiError(
+                HTTP_STATUS.NOT_FOUND,
+                "Project not found"
+            );
+        }
+
+        // check if the project is present in the workspace or not
+        if (project.workspace.toString() !== workspaceId) {
+            throw new ApiError(
+                HTTP_STATUS.NOT_FOUND,
+                "Project not found in this workspace"
+            );
+        }
+
+        // return response
+        return res
+            .status(HTTP_STATUS.OK)
+            .json(
+                new ApiResponse(
+                    HTTP_STATUS.OK,
+                    project,
+                    "Project fetched successfully"
+                )
+            );
+
+
+    }
+);
