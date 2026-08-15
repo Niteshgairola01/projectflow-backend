@@ -1,5 +1,5 @@
 import bcrypt from "bcrypt";
-import { clearRefreshToken, createUser, findByEmail, findByEmailWithPassword, findById, findByIdWithoutRefreshToken, updateRefreshToken } from "../repositories/auth.repository.js";
+import { clearRefreshToken, createUser, findByEmail, findByEmailWithPassword, findById, findByIdWithoutRefreshToken, findUserById, updateRefreshToken } from "../repositories/auth.repository.js";
 import ApiError from "../utils/ApiError.js";
 import { HTTP_STATUS } from "../constants/httpStatus.js";
 import { AUTH_CONFIG } from "../constants/auth.js";
@@ -122,4 +122,8 @@ export const getCurrentUser = async (userId) => {
     }
 
     return user;
+}
+
+export const getUser = async (userId) => {
+    return await findUserById(userId);
 }
