@@ -15,3 +15,17 @@ export const findProjectsByWorkspaceId = (workspaceId) => {
 export const findProjectById = (projectId) => {
     return Project.findById(projectId);
 }
+
+export const updateProject = (projectId, workspaceId, projectData,) => {
+    return Project.findByIdAndUpdate(
+        {
+            _id: projectId,
+            workspace: workspaceId
+        },
+        projectData,
+        {
+            new: true,
+            runValidators: true
+        }
+    );
+}

@@ -26,3 +26,5 @@ export const createProjectSchema = z.object({
         .string()
         .optional(),
 });
+
+export const updateProjectSchema = createProjectSchema.partial();
