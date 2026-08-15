@@ -1,5 +1,6 @@
 import { HTTP_STATUS } from "../constants/httpStatus.js";
-import { registerUser, loginUser, refreshAccessToken, logOutUser, getCurrentUser } from "../services/auth.service.js";
+import { registerUser, loginUser, refreshAccessToken, logOutUser, getCurrentUser, getUser } from "../services/auth.service.js";
+import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 
@@ -103,5 +104,30 @@ export const me = asyncHandler(
                     "User fetched successfully"
                 )
             )
+    }
+);
+
+export const getUserById = asyncHandler(
+    async (req, res) => {
+        const userId = req?.params?.userId;
+        const user = await getUser(userId);
+
+        if (!user) {
+            throw new ApiError(
+                HTTP_STATUS.NOT_FOUND,
+                "User not found"
+            );
+        }
+
+
+        return res
+            .status(HTTP_STATUS.OK)
+            .json(
+                new ApiResponse(
+                    HTTP_STATUS.OK,
+                    user,
+                    "User fetched successfully"
+                )
+            );
     }
 )
