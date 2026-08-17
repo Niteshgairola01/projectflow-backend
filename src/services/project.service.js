@@ -1,4 +1,4 @@
-import { createProject, findProjectById, findProjectsByWorkspaceId, updateProject } from "../repositories/project.repository.js"
+import { createProject, deleteProject, findProjectById, findProjectsByWorkspaceId, updateProject } from "../repositories/project.repository.js"
 
 export const createNewProject = async (data, workspaceId, userId) => {
     const projectData = {
@@ -25,4 +25,8 @@ export const updateExistingProject = async (data, projectId, workspaceId, userId
     }
 
     return await updateProject(projectId, workspaceId, projectData);
+}
+
+export const deleteExistingProject = async (projectId, workspaceId) => {
+    return await deleteProject(projectId, workspaceId);
 }

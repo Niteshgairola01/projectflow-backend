@@ -29,3 +29,12 @@ export const updateProject = (projectId, workspaceId, projectData,) => {
         }
     );
 }
+
+export const deleteProject = (projectId, workspaceId) => {
+    return Project.findOneAndDelete(
+        {
+            _id: projectId,
+            workspace: workspaceId
+        }
+    )
+}
