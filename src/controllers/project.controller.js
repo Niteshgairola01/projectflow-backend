@@ -1,6 +1,7 @@
 import { HTTP_STATUS } from "../constants/httpStatus.js";
+import { findProjectById } from "../repositories/project.repository.js";
 import { findWorkspaceById } from "../repositories/workspace.repository.js";
-import { createNewProject, fetchAllProjectsOfWorkspace, fetchProjectById, updateExistingProject } from "../services/project.service.js";
+import { createNewProject, deleteExistingProject, fetchAllProjectsOfWorkspace, fetchProjectById, updateExistingProject } from "../services/project.service.js";
 import { fetchWorkspaceById } from "../services/workspace.service.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
@@ -212,5 +213,47 @@ export const updateProject = asyncHandler(
             )
 
 
+    }
+);
+
+export const deleteProject = asyncHandler(
+    async (req, res) => {
+        const { projectId, workspaceId } = req.params;
+
+        if (!projectId) {
+            throw new ApiError(
+                HTTP_STATUS.NOT_FOUND,
+                "Project id not found"
+            );
+        }
+
+        if (!workspaceId) {
+            throw new ApiError(
+                HTTP_STATUS.NOT_FOUND,
+                "Workspace id not found"
+            );
+        }
+
+        const project = await deleteExistingProject(
+            projectId,
+            workspaceId
+        );
+
+        if (!project) {
+            throw new ApiError(
+                HTTP_STATUS.NOT_FOUND,
+                "Project not found in this workspace"
+            );
+        }
+
+        return res
+            .status(HTTP_STATUS.OK)
+            .json(
+                new ApiResponse(
+                    HTTP_STATUS.OK,
+                    null,
+                    "Project deleted successfully"
+                )
+            );
     }
 );
