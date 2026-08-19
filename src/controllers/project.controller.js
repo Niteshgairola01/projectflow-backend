@@ -30,13 +30,13 @@ export const createProject = asyncHandler(
             );
         }
 
-        // check if the user is memeber of the workspace or not
+        // check if the user is member of the workspace or not
         const isMember = workspace.members.some(member => member.user._id.toString() === userId);
 
         if (!isMember) {
             throw new ApiError(
                 HTTP_STATUS.FORBIDDEN,
-                "User is not a memeber of the workspace"
+                "User is not a member of the workspace"
             )
         }
 
@@ -186,7 +186,7 @@ export const updateProject = asyncHandler(
         if (!isMember) {
             throw new ApiError(
                 HTTP_STATUS.FORBIDDEN,
-                "User is not a memeber of the workspace"
+                "User is not a member of the workspace"
             )
         }
 
