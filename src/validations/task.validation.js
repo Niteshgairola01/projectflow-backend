@@ -33,7 +33,8 @@ export const createTaskSchema = z.object({
         .max(2000, "Description cannot exceed 2000 characters")
         .optional(),
 
-    assignedTo: objectIdSchema.optional(),
+    assignedTo: z.string().optional(),
+    // assignedTo: objectIdSchema.optional(),
 
     status: z
         .enum(TASK_STATUS)
