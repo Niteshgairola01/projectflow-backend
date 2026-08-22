@@ -9,11 +9,16 @@ export const createTask = asyncHandler(
         const userId = req.user?.userId;
         const { workspaceId, projectId } = req.params;
 
+        const body = {
+            ...req.body,
+            assignedTo: req?.body?.assignedTo || undefined
+        }
+
         const task = await createNewTask(
             workspaceId,
             projectId,
             userId,
-            req.body
+            body
         );
 
         return res
@@ -33,12 +38,17 @@ export const updateTask = asyncHandler(
         const userId = req.user?.userId;
         const { workspaceId, projectId, taskId } = req.params;
 
+        const body = {
+            ...req.body,
+            assignedTo: req?.body?.assignedTo || undefined
+        }
+
         const task = await updateExistingTask(
             taskId,
             workspaceId,
             projectId,
             userId,
-            req.body
+            body
         );
 
         return res
