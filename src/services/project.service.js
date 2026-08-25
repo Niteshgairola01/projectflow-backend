@@ -1,11 +1,18 @@
+import { PROJECT_ROLES } from "../constants/projectRoles.js";
 import { createProject, deleteProject, findProjectById, findProjectsByWorkspaceId, updateProject } from "../repositories/project.repository.js"
 
 export const createNewProject = async (data, workspaceId, userId) => {
     const projectData = {
         ...data,
         workspace: workspaceId,
-        createdBy: userId
-    }
+        createdBy: userId,
+        members: [
+            {
+                user: userId,
+                role: PROJECT_ROLES.PROJECT_ADMIN
+            }
+        ]
+    };
 
     return await createProject(projectData);
 }

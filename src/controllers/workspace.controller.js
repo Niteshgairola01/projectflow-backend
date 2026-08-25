@@ -57,6 +57,8 @@ export const getWorkspaceById = asyncHandler(
         }
 
         const workspace = await fetchWorkspaceById(id);
+        console.log("innner", workspace);
+
 
         if (!workspace) {
             throw new ApiError(
