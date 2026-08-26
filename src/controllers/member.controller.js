@@ -18,9 +18,6 @@ export const getWorkspaceMembers = asyncHandler(
 
         const members = await fetchWorkspaceMembers(workspaceId, userId);
 
-        console.log("members", members);
-
-
         return res
             .status(HTTP_STATUS.OK)
             .json(
