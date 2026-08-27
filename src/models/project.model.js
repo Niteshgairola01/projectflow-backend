@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { ProjectMemberSchema } from "./schemas/projectMember.schema.js";
 
 const ProjectSchema = new mongoose.Schema(
     {
@@ -30,6 +31,7 @@ const ProjectSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
         },
+        members: [ProjectMemberSchema],
 
         status: {
             type: String,
@@ -48,7 +50,7 @@ const ProjectSchema = new mongoose.Schema(
 
         endDate: {
             type: Date,
-        },
+        }
     },
     {
         timestamps: true,

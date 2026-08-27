@@ -23,7 +23,7 @@ const UserSchema = new mongoose.Schema({
     },
     isEmailVerified: {
         type: Boolean,
-        defalt: false
+        default: false,
     },
     passwordResetToken: {
         type: String
@@ -37,7 +37,5 @@ const UserSchema = new mongoose.Schema({
 }, {
     timestamps: true
 });
-
-UserSchema.index({ email: 2 });
 
 export default mongoose.model("User", UserSchema);
