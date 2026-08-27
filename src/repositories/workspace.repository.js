@@ -1,4 +1,3 @@
-import { WORKSPACE_ROLES } from "../constants/workspaceRoles.js";
 import Workspace from "../models/workspace.model.js";
 
 export const createWorkspace = (workspaceData) => {
@@ -14,19 +13,6 @@ export const findWorkspaceById = (id) => {
         .populate("members.user", "name email")
 }
 
-export const addWorkspaceMember = (workspaceId, userId) => {
-    return Workspace.findByIdAndUpdate(
-        workspaceId,
-        {
-            $push: {
-                members: {
-                    user: userId,
-                    role: WORKSPACE_ROLES.MEMBER
-                }
-            }
-        },
-        {
-            new: true
-        }
-    )
+export const findWorkspace = (workspaceId)=> {
+    return Workspace.findById(workspaceId);
 }

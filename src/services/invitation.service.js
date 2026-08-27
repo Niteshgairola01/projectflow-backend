@@ -3,10 +3,11 @@ import { HTTP_STATUS } from "../constants/httpStatus.js";
 import { WORKSPACE_ROLES } from "../constants/workspaceRoles.js";
 import { findByEmail, findById } from "../repositories/auth.repository.js";
 import { createInvitation, findInvitationByToken, findPendingInvitation, findPendingInvitationsByEmail, markInvitationAsAccepted, sendWorkspaceInvitationEmail } from "../repositories/invitation.repository.js";
-import { addWorkspaceMember, findWorkspaceById } from "../repositories/workspace.repository.js"
+import { findWorkspaceById } from "../repositories/workspace.repository.js"
 import ApiError from "../utils/ApiError.js";
 import { INVITATION_STATUS } from "../constants/invitationStatus.js";
 import { getUser } from "./auth.service.js";
+import { addWorkspaceMember } from "../repositories/member.repository.js";
 
 export const createNewInvitation = async (workspaceId, email, invitedBy) => {
     const workspace = await findWorkspaceById(workspaceId);
