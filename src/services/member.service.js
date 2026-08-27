@@ -1,7 +1,8 @@
 import { HTTP_STATUS } from "../constants/httpStatus.js"
+import { PROJECT_ROLES } from "../constants/projectRoles.js";
 import { WORKSPACE_ROLES } from "../constants/workspaceRoles.js";
-import { findMembersByWorkspace, removeMemberFromWorkspaceProjects, removeWorkspaceMember, updateWorkspaceMemberRole } from "../repositories/member.repository.js";
-import { findWorkspace } from "../repositories/workspace.repository.js";
+import { addMemberToProject, findMembersByProject, findMembersByWorkspace, findProjectForMemberManagement, removeMemberFromProject, removeMemberFromWorkspaceProjects, removeWorkspaceMember, updateProjectMemberRole, updateWorkspaceMemberRole } from "../repositories/member.repository.js";
+import { findWorkspace, findWorkspaceById } from "../repositories/workspace.repository.js";
 import ApiError from "../utils/ApiError.js"
 
 export const fetchWorkspaceMembers = async (workspaceId, userId) => {
@@ -193,6 +194,287 @@ export const deleteWorkspaceMember = async (
     // Remove from all projects inside workspace
     await removeMemberFromWorkspaceProjects(
         workspaceId,
+        targetUserId
+    );
+
+    return null;
+};
+
+
+
+// Project members
+const canManageProjectMembers = ({
+    workspace,
+    project,
+    requestedBy,
+}) => {
+    const workspaceMember = workspace.members.find((member) => member.user._id?.toString() === requestedBy?.toString());
+
+    console.log("");
+    
+
+    // Workspace OWNER / ADMIN
+    if (
+        workspaceMember?.role === WORKSPACE_ROLES.OWNER ||
+        workspaceMember?.role === WORKSPACE_ROLES.ADMIN
+    ) {
+        return true;
+    }
+
+    const projectMember = project.members.find((member) => member.user?.toString() === requestedBy?.toString());
+
+    // Project admin
+    if (projectMember?.role === PROJECT_ROLES.PROJECT_ADMIN) return true;
+
+    return false;
+};
+
+export const fetchProjectMembers = async (
+    workspaceId,
+    projectId,
+    requestedBy
+) => {
+    const workspace = await findWorkspaceById(workspaceId);
+
+    if (!workspace) {
+        throw new ApiError(
+            HTTP_STATUS.NOT_FOUND,
+            "Workspace not found"
+        );
+    }
+
+    const project = await findMembersByProject(
+        workspaceId,
+        projectId
+    );
+
+    if (!project) {
+        throw new ApiError(
+            HTTP_STATUS.NOT_FOUND,
+            "Project not found"
+        );
+    }
+
+    // User must belong to workspace
+    const workspaceMember = workspace.members.some((member) => member.user._id?.toString() === requestedBy?.toString());
+
+    if (!workspaceMember) {
+        throw new ApiError(
+            HTTP_STATUS.FORBIDDEN,
+            "You are not a member of this workspace"
+        );
+    }
+
+    return project.members;
+};
+
+
+export const addNewProjectMember = async (
+    workspaceId,
+    projectId,
+    userId,
+    role,
+    requestedBy
+) => {
+    const workspace = await findWorkspaceById(workspaceId);
+
+    if (!workspace) {
+        throw new ApiError(
+            HTTP_STATUS.NOT_FOUND,
+            "Workspace not found"
+        );
+    }
+
+    const project = await findProjectForMemberManagement(
+        workspaceId,
+        projectId
+    );
+
+    if (!project) {
+        throw new ApiError(
+            HTTP_STATUS.NOT_FOUND,
+            "Project not found"
+        );
+    }
+
+    // Check requester permissions
+    const canManage = canManageProjectMembers({
+        workspace,
+        project,
+        requestedBy,
+    });
+
+    if (!canManage) {
+        throw new ApiError(
+            HTTP_STATUS.FORBIDDEN,
+            "You are not authorized to manage project members"
+        );
+    }
+
+    // Target user MUST belong to workspace
+    const workspaceMember = workspace.members.find((member) => member.user._id?.toString() === userId?.toString());
+
+    if (!workspaceMember) {
+        throw new ApiError(
+            HTTP_STATUS.BAD_REQUEST,
+            "User must be a workspace member before being added to the project"
+        );
+    }
+
+    // Prevent duplicate project membership
+    const alreadyMember = project.members.some((member) => member.user?.toString() === userId?.toString());
+
+    if (alreadyMember) {
+        throw new ApiError(
+            HTTP_STATUS.BAD_REQUEST,
+            "User is already a member of this project"
+        );
+    }
+
+    const updatedProject = await addMemberToProject(
+        workspaceId,
+        projectId,
+        userId,
+        role
+    );
+
+    const addedMember = updatedProject.members.find((member) => member.user?._id?.toString() === userId?.toString());
+
+    return addedMember;
+};
+
+export const updateProjectMember = async (
+    workspaceId,
+    projectId,
+    targetUserId,
+    role,
+    requestedBy
+) => {
+    const workspace = await findWorkspaceById(workspaceId);
+
+    if (!workspace) {
+        throw new ApiError(
+            HTTP_STATUS.NOT_FOUND,
+            "Workspace not found"
+        );
+    }
+
+    const project = await findProjectForMemberManagement(
+        workspaceId,
+        projectId
+    );
+
+    if (!project) {
+        throw new ApiError(
+            HTTP_STATUS.NOT_FOUND,
+            "Project not found"
+        );
+    }
+
+    const canManage = canManageProjectMembers({
+        workspace,
+        project,
+        requestedBy,
+    });
+
+    if (!canManage) {
+        throw new ApiError(
+            HTTP_STATUS.FORBIDDEN,
+            "You are not authorized to manage project members"
+        );
+    }
+
+    const targetMember = project.members.find(
+        (member) =>
+            member.user?.toString() === targetUserId?.toString()
+    );
+
+    if (!targetMember) {
+        throw new ApiError(
+            HTTP_STATUS.NOT_FOUND,
+            "Project member not found"
+        );
+    }
+
+    if (targetMember.role === role) {
+        throw new ApiError(
+            HTTP_STATUS.BAD_REQUEST,
+            `Member already has role ${role}`
+        );
+    }
+
+    const updatedProject = await updateProjectMemberRole(
+        workspaceId,
+        projectId,
+        targetUserId,
+        role
+    );
+
+    const updatedMember = updatedProject.members.find(
+        (member) =>
+            member.user?._id?.toString() ===
+            targetUserId?.toString()
+    );
+
+    return updatedMember;
+};
+
+
+export const deleteProjectMember = async (
+    workspaceId,
+    projectId,
+    targetUserId,
+    requestedBy
+) => {
+    const workspace = await findWorkspaceById(workspaceId);
+
+    if (!workspace) {
+        throw new ApiError(
+            HTTP_STATUS.NOT_FOUND,
+            "Workspace not found"
+        );
+    }
+
+    const project = await findProjectForMemberManagement(
+        workspaceId,
+        projectId
+    );
+
+    if (!project) {
+        throw new ApiError(
+            HTTP_STATUS.NOT_FOUND,
+            "Project not found"
+        );
+    }
+
+    const canManage = canManageProjectMembers({
+        workspace,
+        project,
+        requestedBy,
+    });
+
+    if (!canManage) {
+        throw new ApiError(
+            HTTP_STATUS.FORBIDDEN,
+            "You are not authorized to remove project members"
+        );
+    }
+
+    const targetMember = project.members.find(
+        (member) =>
+            member.user?.toString() === targetUserId?.toString()
+    );
+
+    if (!targetMember) {
+        throw new ApiError(
+            HTTP_STATUS.NOT_FOUND,
+            "Project member not found"
+        );
+    }
+
+    await removeMemberFromProject(
+        workspaceId,
+        projectId,
         targetUserId
     );
 
