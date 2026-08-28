@@ -8,11 +8,16 @@ export const authorizeWorkspacePermission = (
     userId,
     permission
 ) => {
+    // console.log("workspace", workspace?.members, userId);
+
+
     const member = workspace.members?.find(
         (member) =>
             member.user?._id?.toString() === userId?.toString() ||
             member.user?.toString() === userId?.toString()
     );
+
+
 
     if (!member) {
         throw new ApiError(

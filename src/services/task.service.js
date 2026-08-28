@@ -21,7 +21,7 @@ export const createNewTask = async (
     }
 
     // Validate project
-    const project = await fetchProjectById(projectId);
+    const project = await fetchProjectById(workspaceId, projectId, userId);
 
     if (!project) {
         throw new ApiError(
@@ -103,7 +103,7 @@ export const updateExistingTask = async (
     }
 
     // Validate project
-    const project = await fetchProjectById(projectId);
+    const project = await fetchProjectById(workspaceId, projectId, userId);
 
     if (!project) {
         throw new ApiError(
@@ -173,7 +173,7 @@ export const fetchAllTasksByProject = async (workspaceId, projectId) => {
     }
 
     // Validate project
-    const project = await fetchProjectById(projectId);
+    const project = await fetchProjectById(workspaceId, projectId, userId);
 
     if (!project) {
         throw new ApiError(
@@ -197,7 +197,7 @@ export const fetchTaskById = async (workspaceId, projectId, taskId) => {
     }
 
     // Validate project
-    const project = await fetchProjectById(projectId);
+    const project = await fetchProjectById(workspaceId, projectId, userId);
 
     if (!project) {
         throw new ApiError(
@@ -225,7 +225,7 @@ export const deleteExistingTask = async (
     }
 
     // Validate project
-    const project = await fetchProjectById(projectId);
+    const project = await fetchProjectById(workspaceId, projectId, userId);
 
     if (!project) {
         throw new ApiError(
