@@ -3,6 +3,9 @@ import { fetchProjectById } from "./project.service.js";
 import { fetchWorkspaceById } from "./workspace.service.js";
 import { createTask, deleteTask, getTaskById, getTasksByProject, updateTask } from "../repositories/task.repository.js";
 import ApiError from "../utils/ApiError.js";
+import { PERMISSIONS } from "../constants/permissions.js";
+import { authorizeProjectManagement } from "../utils/authorization/authorizeProjectManagement.js";
+import { findProjectById } from "../repositories/project.repository.js";
 
 export const createNewTask = async (
     workspaceId,
@@ -20,8 +23,8 @@ export const createNewTask = async (
         );
     }
 
-    // Validate project
-    const project = await fetchProjectById(workspaceId, projectId, userId);
+    // Fetch project
+    const project = await findProjectById(workspaceId, projectId);
 
     if (!project) {
         throw new ApiError(
@@ -30,48 +33,32 @@ export const createNewTask = async (
         );
     }
 
-    // Check if project belongs to workspace
-    const isValidProject =
-        project.workspace?.toString() === workspaceId;
-
-    if (!isValidProject) {
-        throw new ApiError(
-            HTTP_STATUS.UNPROCESSABLE_ENTITY,
-            "Project does not belong to the workspace"
-        );
-    }
-
-    // Check if creator is a workspace member
-    const isMember = workspace.members?.some(
-        (member) =>
-            member.user?._id?.toString() === userId
+    // RBAC
+    authorizeProjectManagement(
+        workspace,
+        project,
+        userId,
+        PERMISSIONS.CREATE_TASK
     );
 
-    if (!isMember) {
-        throw new ApiError(
-            HTTP_STATUS.FORBIDDEN,
-            "User is not a member of the workspace"
-        );
-    }
-
-    // Validate assignee if provided
+    // Validate assignee
     const assignedTo = taskData?.assignedTo;
 
     if (assignedTo) {
-        const isValidAssignee = workspace.members?.some(
+        const isProjectMember = project.members?.some(
             (member) =>
-                member.user?._id?.toString() === assignedTo
+                member.user?._id?.toString() === assignedTo?.toString() ||
+                member.user?.toString() === assignedTo?.toString()
         );
 
-        if (!isValidAssignee) {
+        if (!isProjectMember) {
             throw new ApiError(
-                HTTP_STATUS.FORBIDDEN,
-                "Assignee is not a member of the workspace"
+                HTTP_STATUS.BAD_REQUEST,
+                "Assignee must be a member of the project"
             );
         }
     }
 
-    // Prepare task data
     const newTaskData = {
         ...taskData,
         workspace: workspaceId,
@@ -79,10 +66,7 @@ export const createNewTask = async (
         createdBy: userId,
     };
 
-    // Create task
-    const task = await createTask(newTaskData);
-
-    return task;
+    return await createTask(newTaskData);
 };
 
 export const updateExistingTask = async (
@@ -123,18 +107,13 @@ export const updateExistingTask = async (
         );
     }
 
-    // Check if creator is a workspace member
-    const isMember = workspace.members?.some(
-        (member) =>
-            member.user?._id?.toString() === userId
+    // RBAC
+    authorizeProjectManagement(
+        workspace,
+        project,
+        userId,
+        PERMISSIONS.UPDATE_TASK
     );
-
-    if (!isMember) {
-        throw new ApiError(
-            HTTP_STATUS.FORBIDDEN,
-            "User is not a member of the workspace"
-        );
-    }
 
     // Validate assignee if provided
     const assignedTo = taskData?.assignedTo;
@@ -161,7 +140,7 @@ export const updateExistingTask = async (
     )
 };
 
-export const fetchAllTasksByProject = async (workspaceId, projectId) => {
+export const fetchAllTasksByProject = async (workspaceId, projectId, userId) => {
     // Validate workspace
     const workspace = await fetchWorkspaceById(workspaceId);
 
@@ -181,11 +160,18 @@ export const fetchAllTasksByProject = async (workspaceId, projectId) => {
             "Project not found"
         );
     }
+
+    authorizeProjectManagement(
+        workspace,
+        project,
+        userId,
+        PERMISSIONS.VIEW_ALL_PROJECT_TASKS,
+    );
 
     return getTasksByProject(workspaceId, projectId);
 };
 
-export const fetchTaskById = async (workspaceId, projectId, taskId) => {
+export const fetchTaskById = async (workspaceId, projectId, taskId, userId) => {
     // Validate workspace
     const workspace = await fetchWorkspaceById(workspaceId);
 
@@ -205,6 +191,13 @@ export const fetchTaskById = async (workspaceId, projectId, taskId) => {
             "Project not found"
         );
     }
+
+    authorizeProjectManagement(
+        workspace,
+        project,
+        userId,
+        PERMISSIONS.VIEW_TASK
+    )
 
     return await getTaskById(workspaceId, projectId, taskId);
 };
@@ -212,7 +205,8 @@ export const fetchTaskById = async (workspaceId, projectId, taskId) => {
 export const deleteExistingTask = async (
     workspaceId,
     projectId,
-    taskId
+    taskId,
+    userId
 ) => {
     // Validate workspace
     const workspace = await fetchWorkspaceById(workspaceId);
@@ -234,18 +228,60 @@ export const deleteExistingTask = async (
         );
     }
 
-    const deletedTask = await deleteTask(
-        taskId,
-        workspaceId,
-        projectId
-    );
+    // Fetch task before deletion
+    const task = await fetchTaskById(workspaceId, projectId, taskId, userId);
 
-    if (!deletedTask) {
+    if (!task) {
         throw new ApiError(
             HTTP_STATUS.NOT_FOUND,
             "Task not found"
         );
     }
+
+    /*
+     * DELETE_ANY_TASK.
+     *
+     * Allowed:
+     * - Workspace OWNER
+     * - Workspace ADMIN
+     * - Project PROJECT_ADMIN
+     */
+    try {
+        authorizeProjectManagement(
+            workspace,
+            project,
+            userId,
+            PERMISSIONS.DELETE_ANY_TASK
+        );
+    } catch (error) {
+        /*
+         * User cannot delete any task.
+         * Now check whether they can delete their own task.
+         */
+        authorizeProjectManagement(
+            workspace,
+            project,
+            userId,
+            PERMISSIONS.DELETE_OWN_TASK
+        );
+
+        const isCreator =
+            task.createdBy?._id?.toString() === userId?.toString() ||
+            task.createdBy?.toString() === userId?.toString();
+
+        if (!isCreator) {
+            throw new ApiError(
+                HTTP_STATUS.FORBIDDEN,
+                "You can only delete tasks created by you"
+            );
+        }
+    }
+
+    const deletedTask = await deleteTask(
+        taskId,
+        workspaceId,
+        projectId
+    );
 
     return deletedTask;
 };
