@@ -1,12 +1,15 @@
 import { HTTP_STATUS } from "../constants/httpStatus.js"
+import { PERMISSIONS } from "../constants/permissions.js";
 import { PROJECT_ROLES } from "../constants/projectRoles.js";
 import { WORKSPACE_ROLES } from "../constants/workspaceRoles.js";
 import { addMemberToProject, findMembersByProject, findMembersByWorkspace, findProjectForMemberManagement, removeMemberFromProject, removeMemberFromWorkspaceProjects, removeWorkspaceMember, updateProjectMemberRole, updateWorkspaceMemberRole } from "../repositories/member.repository.js";
 import { findWorkspace, findWorkspaceById } from "../repositories/workspace.repository.js";
 import ApiError from "../utils/ApiError.js"
+import { authorizeProjectManagement } from "../utils/authorization/authorizeProjectManagement.js";
+import { authorizeWorkspacePermission } from "../utils/authorization/authorizeWorkspacePermission.js";
 
 export const fetchWorkspaceMembers = async (workspaceId, userId) => {
-    const workspace = await findMembersByWorkspace(workspaceId, userId);
+    const workspace = await findWorkspaceById(workspaceId);
 
     if (!workspace) {
         throw new ApiError(
@@ -15,16 +18,14 @@ export const fetchWorkspaceMembers = async (workspaceId, userId) => {
         );
     }
 
-    const isMember = workspace.members.some(member => member.user._id?.toString() === userId);
+    authorizeWorkspacePermission(
+        workspace,
+        userId,
+        PERMISSIONS.VIEW_WORKSPACE_MEMBERS
+    );
 
-    if (!isMember) {
-        throw new ApiError(
-            HTTP_STATUS.FORBIDDEN,
-            "User is not a member of workspace"
-        )
-    }
-
-    return workspace.members;
+    const workspaceWithMembers = await findMembersByWorkspace(workspaceId, userId)
+    return workspaceWithMembers.members;
 }
 
 export const updateWorkspaceMember = async (
@@ -42,26 +43,12 @@ export const updateWorkspaceMember = async (
         );
     }
 
-    // Requester must belong to workspace
-    const requester = workspace.members.find((member) => member.user?.toString() === requestedBy?.toString());
-
-    if (!requester) {
-        throw new ApiError(
-            HTTP_STATUS.FORBIDDEN,
-            "You are not a member of this workspace"
-        );
-    }
-
-    // Only OWNER / ADMIN can manage member roles
-    if (
-        requester.role !== WORKSPACE_ROLES.OWNER &&
-        requester.role !== WORKSPACE_ROLES.ADMIN
-    ) {
-        throw new ApiError(
-            HTTP_STATUS.FORBIDDEN,
-            "You are not authorized to update member roles"
-        );
-    }
+    // Autorize requester
+    const requester = authorizeWorkspacePermission(
+        workspace,
+        requestedBy,
+        PERMISSIONS.MANAGE_WORKSPACE_MEMBERS
+    );
 
     // Target must already belong to workspace
     const targetMember = workspace.members.find((member) => member.user?.toString() === targetUserId?.toString());
@@ -133,26 +120,11 @@ export const deleteWorkspaceMember = async (
         );
     }
 
-    // Find requester
-    const requester = workspace.members.find((member) => member.user?.toString() === requestedBy?.toString());
-
-    if (!requester) {
-        throw new ApiError(
-            HTTP_STATUS.FORBIDDEN,
-            "You are not a member of this workspace"
-        );
-    }
-
-    // Only OWNER / ADMIN can remove members
-    if (
-        requester.role !== WORKSPACE_ROLES.OWNER &&
-        requester.role !== WORKSPACE_ROLES.ADMIN
-    ) {
-        throw new ApiError(
-            HTTP_STATUS.FORBIDDEN,
-            "You are not authorized to remove workspace members"
-        );
-    }
+    const requester = authorizeWorkspacePermission(
+        workspace,
+        requestedBy,
+        PERMISSIONS.MANAGE_WORKSPACE_MEMBERS
+    );
 
     // Find target member
     const targetMember = workspace.members.find((member) => member.user?.toString() === targetUserId?.toString());
@@ -203,31 +175,6 @@ export const deleteWorkspaceMember = async (
 
 
 // Project members
-const canManageProjectMembers = ({
-    workspace,
-    project,
-    requestedBy,
-}) => {
-    const workspaceMember = workspace.members.find((member) => member.user._id?.toString() === requestedBy?.toString());
-
-    console.log("");
-    
-
-    // Workspace OWNER / ADMIN
-    if (
-        workspaceMember?.role === WORKSPACE_ROLES.OWNER ||
-        workspaceMember?.role === WORKSPACE_ROLES.ADMIN
-    ) {
-        return true;
-    }
-
-    const projectMember = project.members.find((member) => member.user?.toString() === requestedBy?.toString());
-
-    // Project admin
-    if (projectMember?.role === PROJECT_ROLES.PROJECT_ADMIN) return true;
-
-    return false;
-};
 
 export const fetchProjectMembers = async (
     workspaceId,
@@ -254,6 +201,13 @@ export const fetchProjectMembers = async (
             "Project not found"
         );
     }
+
+    authorizeProjectManagement(
+        workspace,
+        project,
+        requestedBy,
+        PERMISSIONS.VIEW_PROJECT_MEMBERS
+    )
 
     // User must belong to workspace
     const workspaceMember = workspace.members.some((member) => member.user._id?.toString() === requestedBy?.toString());
@@ -298,18 +252,12 @@ export const addNewProjectMember = async (
     }
 
     // Check requester permissions
-    const canManage = canManageProjectMembers({
+    authorizeProjectManagement(
         workspace,
         project,
         requestedBy,
-    });
-
-    if (!canManage) {
-        throw new ApiError(
-            HTTP_STATUS.FORBIDDEN,
-            "You are not authorized to manage project members"
-        );
-    }
+        PERMISSIONS.MANAGE_PROJECT_MEMBERS
+    );
 
     // Target user MUST belong to workspace
     const workspaceMember = workspace.members.find((member) => member.user._id?.toString() === userId?.toString());
@@ -371,18 +319,12 @@ export const updateProjectMember = async (
         );
     }
 
-    const canManage = canManageProjectMembers({
+    authorizeProjectManagement(
         workspace,
         project,
         requestedBy,
-    });
-
-    if (!canManage) {
-        throw new ApiError(
-            HTTP_STATUS.FORBIDDEN,
-            "You are not authorized to manage project members"
-        );
-    }
+        PERMISSIONS.MANAGE_PROJECT_MEMBERS
+    );
 
     const targetMember = project.members.find(
         (member) =>
@@ -447,18 +389,12 @@ export const deleteProjectMember = async (
         );
     }
 
-    const canManage = canManageProjectMembers({
+    authorizeProjectManagement(
         workspace,
         project,
         requestedBy,
-    });
-
-    if (!canManage) {
-        throw new ApiError(
-            HTTP_STATUS.FORBIDDEN,
-            "You are not authorized to remove project members"
-        );
-    }
+        PERMISSIONS.MANAGE_PROJECT_MEMBERS
+    );
 
     const targetMember = project.members.find(
         (member) =>
