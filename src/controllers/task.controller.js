@@ -68,9 +68,10 @@ export const updateTask = asyncHandler(
 export const getTasksByProject = asyncHandler(
     async (req, res) => {
         const { workspaceId, projectId } = req.params;
+        const userId = req.user?.userId;
 
         // fetch tasks and return response
-        const tasks = await fetchAllTasksByProject(workspaceId, projectId);
+        const tasks = await fetchAllTasksByProject(workspaceId, projectId, userId);
 
         return res
             .status(HTTP_STATUS.OK)
@@ -87,9 +88,10 @@ export const getTasksByProject = asyncHandler(
 export const getTaskById = asyncHandler(
     async (req, res) => {
         const { workspaceId, projectId, taskId } = req.params;
+        const userId = req.user?.userId;
 
         // fetch task
-        const task = await fetchTaskById(workspaceId, projectId, taskId);
+        const task = await fetchTaskById(workspaceId, projectId, taskId, userId);
 
 
         if (!task) {
@@ -114,8 +116,9 @@ export const getTaskById = asyncHandler(
 export const deleteTask = asyncHandler(
     async (req, res) => {
         const { workspaceId, projectId, taskId } = req.params;
+        const userId = req.user?.userId;
 
-        await deleteExistingTask(workspaceId, projectId, taskId);
+        await deleteExistingTask(workspaceId, projectId, taskId, userId);
 
         return res
             .status(HTTP_STATUS.OK)
