@@ -2,7 +2,7 @@ import crypto from "crypto"
 import { HTTP_STATUS } from "../constants/httpStatus.js";
 import { WORKSPACE_ROLES } from "../constants/workspaceRoles.js";
 import { findByEmail, findById } from "../repositories/auth.repository.js";
-import { createInvitation, findInvitationByToken, findPendingInvitation, findPendingInvitationsByEmail, markInvitationAsAccepted, sendWorkspaceInvitationEmail } from "../repositories/invitation.repository.js";
+import { createInvitation, findInvitationByToken, findPendingInvitation, findPendingInvitationsByEmail, findWorkspaceAllInvitations, markInvitationAsAccepted, sendWorkspaceInvitationEmail } from "../repositories/invitation.repository.js";
 import { findWorkspaceById } from "../repositories/workspace.repository.js"
 import ApiError from "../utils/ApiError.js";
 import { INVITATION_STATUS } from "../constants/invitationStatus.js";
@@ -120,7 +120,21 @@ export const fetchInvitationByToken = async (token, workspaceId) => {
     }
 
     return invitation;
-}
+};
+
+export const fetchWorkspaceInvitations = async (workspaceId) => {
+    const workspace = await findWorkspaceById(workspaceId);
+
+    if (!workspace) {
+        throw new ApiError(
+            HTTP_STATUS.NOT_FOUND,
+            "Workspace not found"
+        );
+    }
+
+    const invitations = await findWorkspaceAllInvitations(workspaceId);
+    return invitations;
+};
 
 export const fetchPendingInvitations = async (userId) => {
     const user = await getUser(userId);

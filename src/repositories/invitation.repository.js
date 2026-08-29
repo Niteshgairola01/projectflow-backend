@@ -531,6 +531,18 @@ export const findInvitationByToken = async (token, workspace) => {
         .lean();
 };
 
+export const findWorkspaceAllInvitations = async (workspaceId) => {
+
+    return WorkspaceInvitation.find({
+        workspace: workspaceId
+    })
+        .populate("workspace", "name")
+        .populate("invitedBy", "name email")
+        .select("-token")
+        .lean();
+
+};
+
 export const findPendingInvitationsByEmail = async (email) => {
 
     return WorkspaceInvitation.find({

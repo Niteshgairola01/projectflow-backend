@@ -1,6 +1,6 @@
 import { HTTP_STATUS } from "../constants/httpStatus.js";
 import { findWorkspaceById } from "../repositories/workspace.repository.js";
-import { acceptWorkspaceInvitation, createNewInvitation, fetchInvitationByToken, fetchPendingInvitations } from "../services/invitation.service.js";
+import { acceptWorkspaceInvitation, createNewInvitation, fetchInvitationByToken, fetchPendingInvitations, fetchWorkspaceInvitations } from "../services/invitation.service.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
@@ -69,6 +69,32 @@ export const getInvitationByToken = asyncHandler(
             );
     }
 );
+
+export const getWorkspaceInvitations = asyncHandler(
+    async (req, res) => {
+        const { workspaceId } = req.params;
+
+        if (!workspaceId) {
+            throw new ApiError(
+                HTTP_STATUS.BAD_REQUEST,
+                "Workspace id not found"
+            );
+        }
+
+        const invitations = await fetchWorkspaceInvitations(workspaceId);
+
+        return res
+            .status(HTTP_STATUS.OK)
+            .json(
+                new ApiResponse(
+                    HTTP_STATUS.OK,
+                    invitations,
+                    "Workspacee invitations fetched successfully"
+                )
+            );
+
+    }
+)
 
 export const getPendingInvitations = asyncHandler(
     async (req, res) => {
