@@ -11,9 +11,10 @@ export const getTasksByProject = (
     return Task.find({
         workspace: workspaceId,
         project: projectId,
-    }).sort({
-        createdAt: -1,
-    });
+    }).populate("assignedTo", "name email")
+        .sort({
+            createdAt: -1,
+        });
 };
 
 export const getTaskById = (
@@ -25,7 +26,7 @@ export const getTaskById = (
         _id: taskId,
         workspace: workspaceId,
         project: projectId,
-    });
+    }).populate("assignedTo", "name email");
 };
 
 export const updateTask = (
@@ -45,7 +46,7 @@ export const updateTask = (
             new: true,
             runValidators: true,
         }
-    );
+    ).populate("assignedTo", "name email");
 };
 
 export const deleteTask = (

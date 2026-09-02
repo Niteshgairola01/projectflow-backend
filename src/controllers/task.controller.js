@@ -91,8 +91,7 @@ export const getTaskById = asyncHandler(
         const userId = req.user?.userId;
 
         // fetch task
-        const task = await fetchTaskById(workspaceId, projectId, taskId, userId);
-
+        const task = await fetchTaskById(workspaceId, projectId, taskId, userId);        
 
         if (!task) {
             throw new ApiError(

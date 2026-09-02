@@ -93,8 +93,8 @@ export const createNewInvitation = async (workspaceId, email, invitedBy) => {
     return invitation;
 };
 
-export const fetchInvitationByToken = async (token, workspaceId) => {
-    const invitation = await findInvitationByToken(token, workspaceId);
+export const fetchInvitationByToken = async (token) => {
+    const invitation = await findInvitationByToken(token);
 
     if (!invitation) {
         throw new ApiError(
@@ -138,6 +138,8 @@ export const fetchWorkspaceInvitations = async (workspaceId) => {
 
 export const fetchPendingInvitations = async (userId) => {
     const user = await getUser(userId);
+    console.log("user", user);
+
 
     if (!user) {
         throw new ApiError(

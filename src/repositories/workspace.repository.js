@@ -5,7 +5,7 @@ export const createWorkspace = (workspaceData) => {
 }
 
 export const findWorkspacesByUserId = (userId) => {
-    return Workspace.find({ "members.user": userId });
+    return Workspace.find({ "members.user": userId }).populate("members.user", "name email");
 }
 
 export const findWorkspaceById = (id) => {

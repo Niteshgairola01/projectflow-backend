@@ -9,20 +9,18 @@ router.post("/:workspaceId/invitations",
     createInvitation
 );
 
-router.get("/:workspaceId/invitations/:token",
+router.get("/invitations/my-pending",
     authenticateUser,
+    getPendingInvitations
+);
+
+router.get("/invitations/:token",
     getInvitationByToken
 );
 
 router.get("/:workspaceId/invitations",
     authenticateUser,
     getWorkspaceInvitations
-);
-
-
-router.get("/invitations/my-pending",
-    authenticateUser,
-    getPendingInvitations
 );
 
 router.post("/:workspaceId/invitations/:token/accept",

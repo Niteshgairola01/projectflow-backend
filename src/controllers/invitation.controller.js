@@ -40,15 +40,7 @@ export const createInvitation = asyncHandler(
 
 export const getInvitationByToken = asyncHandler(
     async (req, res) => {
-        const { workspaceId, token } = req.params;
-
-        const workspace = await findWorkspaceById(workspaceId);
-        if (!workspace) {
-            throw new ApiError(
-                HTTP_STATUS.NOT_FOUND,
-                "Workspace not found"
-            );
-        }
+        const { token } = req.params;
 
         if (!token) {
             throw new ApiError(
@@ -57,7 +49,7 @@ export const getInvitationByToken = asyncHandler(
             );
         }
 
-        const invitaion = await fetchInvitationByToken(token, workspaceId);
+        const invitaion = await fetchInvitationByToken(token);
 
         return res.status(HTTP_STATUS.OK)
             .json(
