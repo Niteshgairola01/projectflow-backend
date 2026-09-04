@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { authenticateUser } from "../../middlewares/auth.js";
-import { acceptInvitation, createInvitation, getInvitationByToken, getPendingInvitations, getWorkspaceInvitations } from "../../controllers/invitation.controller.js";
+import { acceptInvitation, cancelInvitation, createInvitation, getInvitationByToken, getPendingInvitations, getWorkspaceInvitations } from "../../controllers/invitation.controller.js";
 
 const router = Router();
 
@@ -26,6 +26,11 @@ router.get("/:workspaceId/invitations",
 router.post("/:workspaceId/invitations/:token/accept",
     authenticateUser,
     acceptInvitation
+);
+
+router.delete("/:workspaceId/invitations/:invitationId",
+    authenticateUser,
+    cancelInvitation
 );
 
 export default router;

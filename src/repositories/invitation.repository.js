@@ -577,3 +577,26 @@ export const markInvitationAsAccepted = async (invitationId) => {
         }
     );
 };
+
+export const findInvitationByIdAndWorkspace = async (invitationId, workspaceId) => {
+    return WorkspaceInvitation.findOne({
+        _id: invitationId,
+        workspace: workspaceId
+    });
+};
+
+export const markInvitationAsCancelled = async (invitationId, workspaceId) => {
+    return WorkspaceInvitation.findOneAndUpdate(
+        {
+            _id: invitationId,
+            workspace: workspaceId,
+            status: INVITATION_STATUS.PENDING
+        },
+        {
+            status: INVITATION_STATUS.CANCELLED
+        },
+        {
+            new: true
+        }
+    ).select("-token");
+};
