@@ -8,6 +8,8 @@ import ApiError from "../utils/ApiError.js";
 import { INVITATION_STATUS } from "../constants/invitationStatus.js";
 import { getUser } from "./auth.service.js";
 import { addWorkspaceMember } from "../repositories/member.repository.js";
+import { authorizeWorkspacePermission } from "../utils/authorization/authorizeWorkspacePermission.js";
+import { PERMISSIONS } from "../constants/permissions.js";
 
 export const createNewInvitation = async (workspaceId, email, invitedBy) => {
     const workspace = await findWorkspaceById(workspaceId);
@@ -122,7 +124,7 @@ export const fetchInvitationByToken = async (token, workspaceId) => {
     return invitation;
 };
 
-export const fetchWorkspaceInvitations = async (workspaceId) => {
+export const fetchWorkspaceInvitations = async (workspaceId, userId) => {
     const workspace = await findWorkspaceById(workspaceId);
 
     if (!workspace) {
@@ -131,6 +133,8 @@ export const fetchWorkspaceInvitations = async (workspaceId) => {
             "Workspace not found"
         );
     }
+
+    authorizeWorkspacePermission(workspace, userId, PERMISSIONS.MANAGE_WORKSPACE_MEMBERS);
 
     const invitations = await findWorkspaceAllInvitations(workspaceId);
     return invitations;
@@ -151,7 +155,15 @@ export const fetchPendingInvitations = async (userId) => {
 };
 
 export const acceptWorkspaceInvitation = async (workspaceId, token, userId) => {
-    const invitation = await fetchInvitationByToken(token, workspaceId);
+    const invitation = await fetchInvitationByToken(token);
+
+    const invitationWorkspaceId = invitation.workspace?._id ?? invitation.workspace;
+    if (!invitationWorkspaceId || invitationWorkspaceId.toString() !== workspaceId?.toString()) {
+        throw new ApiError(
+            HTTP_STATUS.FORBIDDEN,
+            "Invitation does not belong to this workspace"
+        );
+    }
 
     if (!invitation) {
         throw new ApiError(

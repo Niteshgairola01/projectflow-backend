@@ -28,9 +28,9 @@ export const findByRefreshToken = (refreshToken) => {
     return User.findOne({ refreshToken });
 }
 
-export const clearRefreshToken = (userId) => {
-    return User.findByIdAndUpdate(
-        userId,
+export const clearRefreshToken = (userId, refreshToken) => {
+    return User.findOneAndUpdate(
+        { _id: userId, refreshToken },
         { refreshToken: null }
     );
 }
