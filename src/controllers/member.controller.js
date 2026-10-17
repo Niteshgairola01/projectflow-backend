@@ -1,3 +1,4 @@
+import { parseListQuery, memberFiltersSchema } from "../validations/list.validation.js";
 import { HTTP_STATUS } from "../constants/httpStatus.js";
 import { addNewProjectMember, deleteProjectMember, deleteWorkspaceMember, fetchProjectMembers, fetchWorkspaceMembers, updateProjectMember, updateWorkspaceMember } from "../services/member.service.js";
 import ApiError from "../utils/ApiError.js";
@@ -16,7 +17,7 @@ export const getWorkspaceMembers = asyncHandler(
             );
         }
 
-        const members = await fetchWorkspaceMembers(workspaceId, userId);
+        const members = await fetchWorkspaceMembers(workspaceId, userId, Object.keys(req.query).length ? parseListQuery(memberFiltersSchema, req.query) : undefined);
 
         return res
             .status(HTTP_STATUS.OK)
@@ -134,7 +135,8 @@ export const getProjectMembers = asyncHandler(
         const members = await fetchProjectMembers(
             workspaceId,
             projectId,
-            requestedBy
+            requestedBy,
+            Object.keys(req.query).length ? parseListQuery(memberFiltersSchema, req.query) : undefined
         );
 
         return res

@@ -3,6 +3,7 @@ import { createNewTask, deleteExistingTask, fetchAllTasksByProject, fetchTaskByI
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
+import { parseListQuery, taskFiltersSchema } from "../validations/list.validation.js";
 
 export const createTask = asyncHandler(
     async (req, res) => {
@@ -71,7 +72,8 @@ export const getTasksByProject = asyncHandler(
         const userId = req.user?.userId;
 
         // fetch tasks and return response
-        const tasks = await fetchAllTasksByProject(workspaceId, projectId, userId);
+        const filters = Object.keys(req.query).length ? parseListQuery(taskFiltersSchema, req.query) : undefined;
+        const tasks = await fetchAllTasksByProject(workspaceId, projectId, userId, filters);
 
         return res
             .status(HTTP_STATUS.OK)

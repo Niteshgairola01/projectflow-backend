@@ -6,6 +6,7 @@ import ApiError from "../utils/ApiError.js";
 import { PERMISSIONS } from "../constants/permissions.js";
 import { authorizeProjectManagement } from "../utils/authorization/authorizeProjectManagement.js";
 import { findProjectById } from "../repositories/project.repository.js";
+import { getFilteredTasks } from "../repositories/task.repository.js";
 
 export const createNewTask = async (
     workspaceId,
@@ -119,15 +120,16 @@ export const updateExistingTask = async (
     const assignedTo = taskData?.assignedTo;
 
     if (assignedTo) {
-        const isValidAssignee = workspace.members?.some(
+        const isValidAssignee = project.members?.some(
             (member) =>
-                member.user?._id?.toString() === assignedTo
+                member.user?._id?.toString() === assignedTo?.toString() ||
+                member.user?.toString() === assignedTo?.toString()
         );
 
         if (!isValidAssignee) {
             throw new ApiError(
-                HTTP_STATUS.FORBIDDEN,
-                "Assignee is not a member of the workspace"
+                HTTP_STATUS.BAD_REQUEST,
+                "Assignee must be a member of the project"
             );
         }
     }
@@ -140,7 +142,7 @@ export const updateExistingTask = async (
     )
 };
 
-export const fetchAllTasksByProject = async (workspaceId, projectId, userId) => {
+export const fetchAllTasksByProject = async (workspaceId, projectId, userId, filters) => {
     // Validate workspace
     const workspace = await fetchWorkspaceById(workspaceId);
 
@@ -168,7 +170,7 @@ export const fetchAllTasksByProject = async (workspaceId, projectId, userId) => 
         PERMISSIONS.VIEW_ALL_PROJECT_TASKS,
     );
 
-    return getTasksByProject(workspaceId, projectId);
+    return filters ? getFilteredTasks(workspaceId, projectId, filters) : getTasksByProject(workspaceId, projectId);
 };
 
 export const fetchTaskById = async (workspaceId, projectId, taskId, userId) => {

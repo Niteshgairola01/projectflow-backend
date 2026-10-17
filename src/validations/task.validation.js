@@ -33,8 +33,9 @@ export const createTaskSchema = z.object({
         .max(2000, "Description cannot exceed 2000 characters")
         .optional(),
 
-    assignedTo: z.string().optional(),
-    // assignedTo: objectIdSchema.optional(),
+    assignedTo: z.union([objectIdSchema, z.literal(""), z.null()])
+        .optional()
+        .transform((value) => value === "" ? null : value),
 
     status: z
         .enum(TASK_STATUS)
@@ -45,8 +46,8 @@ export const createTaskSchema = z.object({
         .optional(),
 
     dueDate: z
-        .coerce
-        .date()
+        .union([z.literal(""), z.null(), z.coerce.date()])
+        .transform((value) => value === "" ? null : value)
         .optional(),
 });
 
