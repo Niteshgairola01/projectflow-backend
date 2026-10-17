@@ -2,7 +2,7 @@ import crypto from "crypto"
 import { HTTP_STATUS } from "../constants/httpStatus.js";
 import { WORKSPACE_ROLES } from "../constants/workspaceRoles.js";
 import { findByEmail, findById } from "../repositories/auth.repository.js";
-import { createInvitation, findInvitationByToken, findPendingInvitation, findPendingInvitationsByEmail, findWorkspaceAllInvitations, markInvitationAsAccepted, sendWorkspaceInvitationEmail } from "../repositories/invitation.repository.js";
+import { createInvitation, findInvitationByIdAndWorkspace, findInvitationByToken, findPendingInvitation, findPendingInvitationsByEmail, findWorkspaceAllInvitations, markInvitationAsAccepted, markInvitationAsCancelled, sendWorkspaceInvitationEmail } from "../repositories/invitation.repository.js";
 import { findWorkspaceById } from "../repositories/workspace.repository.js"
 import ApiError from "../utils/ApiError.js";
 import { INVITATION_STATUS } from "../constants/invitationStatus.js";
@@ -95,8 +95,8 @@ export const createNewInvitation = async (workspaceId, email, invitedBy) => {
     return invitation;
 };
 
-export const fetchInvitationByToken = async (token, workspaceId) => {
-    const invitation = await findInvitationByToken(token, workspaceId);
+export const fetchInvitationByToken = async (token) => {
+    const invitation = await findInvitationByToken(token);
 
     if (!invitation) {
         throw new ApiError(
@@ -142,6 +142,8 @@ export const fetchWorkspaceInvitations = async (workspaceId, userId) => {
 
 export const fetchPendingInvitations = async (userId) => {
     const user = await getUser(userId);
+    console.log("user", user);
+
 
     if (!user) {
         throw new ApiError(
@@ -234,3 +236,55 @@ export const acceptWorkspaceInvitation = async (workspaceId, token, userId) => {
         invitationId: invitation._id
     }
 }
+
+export const cancelWorkspaceInvitation = async (workspaceId, invitationId, userId) => {
+    const workspace = await findWorkspaceById(workspaceId);
+
+    if (!workspace) {
+        throw new ApiError(
+            HTTP_STATUS.NOT_FOUND,
+            "Workspace not found"
+        );
+    }
+
+    const member = workspace.members.find(
+        (workspaceMember) => workspaceMember.user?._id?.toString() === userId?.toString()
+    );
+
+    if (
+        !member ||
+        (member.role !== WORKSPACE_ROLES.OWNER && member.role !== WORKSPACE_ROLES.ADMIN)
+    ) {
+        throw new ApiError(
+            HTTP_STATUS.FORBIDDEN,
+            "Only the workspace owner or an admin can cancel invitations"
+        );
+    }
+
+    const invitation = await findInvitationByIdAndWorkspace(invitationId, workspaceId);
+
+    if (!invitation) {
+        throw new ApiError(
+            HTTP_STATUS.NOT_FOUND,
+            "Invitation not found"
+        );
+    }
+
+    if (invitation.status !== INVITATION_STATUS.PENDING) {
+        throw new ApiError(
+            HTTP_STATUS.BAD_REQUEST,
+            "Only pending invitations can be cancelled"
+        );
+    }
+
+    const cancelledInvitation = await markInvitationAsCancelled(invitationId, workspaceId);
+
+    if (!cancelledInvitation) {
+        throw new ApiError(
+            HTTP_STATUS.CONFLICT,
+            "Invitation is no longer pending"
+        );
+    }
+
+    return cancelledInvitation;
+};

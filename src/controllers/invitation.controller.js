@@ -1,6 +1,6 @@
 import { HTTP_STATUS } from "../constants/httpStatus.js";
 import { findWorkspaceById } from "../repositories/workspace.repository.js";
-import { acceptWorkspaceInvitation, createNewInvitation, fetchInvitationByToken, fetchPendingInvitations, fetchWorkspaceInvitations } from "../services/invitation.service.js";
+import { acceptWorkspaceInvitation, cancelWorkspaceInvitation, createNewInvitation, fetchInvitationByToken, fetchPendingInvitations, fetchWorkspaceInvitations } from "../services/invitation.service.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
@@ -40,15 +40,7 @@ export const createInvitation = asyncHandler(
 
 export const getInvitationByToken = asyncHandler(
     async (req, res) => {
-        const { workspaceId, token } = req.params;
-
-        const workspace = await findWorkspaceById(workspaceId);
-        if (!workspace) {
-            throw new ApiError(
-                HTTP_STATUS.NOT_FOUND,
-                "Workspace not found"
-            );
-        }
+        const { token } = req.params;
 
         if (!token) {
             throw new ApiError(
@@ -57,7 +49,7 @@ export const getInvitationByToken = asyncHandler(
             );
         }
 
-        const invitaion = await fetchInvitationByToken(token, workspaceId);
+        const invitaion = await fetchInvitationByToken(token);
 
         return res.status(HTTP_STATUS.OK)
             .json(
@@ -157,6 +149,43 @@ export const acceptInvitation = asyncHandler(
                     HTTP_STATUS.OK,
                     result,
                     "Invitation accepted successfully"
+                )
+            );
+    }
+);
+
+export const cancelInvitation = asyncHandler(
+    async (req, res) => {
+        const { workspaceId, invitationId } = req.params;
+        const userId = req.user?.userId;
+
+        if (!workspaceId) {
+            throw new ApiError(
+                HTTP_STATUS.BAD_REQUEST,
+                "Workspace ID is required"
+            );
+        }
+
+        if (!invitationId) {
+            throw new ApiError(
+                HTTP_STATUS.BAD_REQUEST,
+                "Invitation ID is required"
+            );
+        }
+
+        const invitation = await cancelWorkspaceInvitation(
+            workspaceId,
+            invitationId,
+            userId
+        );
+
+        return res
+            .status(HTTP_STATUS.OK)
+            .json(
+                new ApiResponse(
+                    HTTP_STATUS.OK,
+                    invitation,
+                    "Invitation cancelled successfully"
                 )
             );
     }

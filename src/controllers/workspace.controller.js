@@ -1,6 +1,9 @@
 import { HTTP_STATUS } from "../constants/httpStatus.js";
-// import { findWorkspaceById, findWorkspacesByUserId } from "../repositories/workspace.repository.js";
-import { createNewWorkspace, fetchAllWorkspacesofUser, fetchWorkspaceById } from "../services/workspace.service.js";
+import {
+    createNewWorkspace,
+    fetchAllWorkspacesofUser,
+    fetchWorkspaceByIdWithProjectCount
+} from "../services/workspace.service.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
@@ -56,7 +59,7 @@ export const getWorkspaceById = asyncHandler(
             )
         }
 
-        const workspace = await fetchWorkspaceById(id);
+        const workspace = await fetchWorkspaceByIdWithProjectCount(id, userId);
 
         if (!workspace) {
             throw new ApiError(
@@ -64,18 +67,6 @@ export const getWorkspaceById = asyncHandler(
                 "Workspace not found"
             );
         }
-
-        const isUserAMember = workspace.members.some(
-            member => member.user._id.toString() === userId
-        );
-
-        if (!isUserAMember) {
-            throw new ApiError(
-                HTTP_STATUS.FORBIDDEN,
-                "You do not have access to this workspace"
-            )
-        }
-
 
         return res
             .status(HTTP_STATUS.OK)

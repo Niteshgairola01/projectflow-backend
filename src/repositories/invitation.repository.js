@@ -523,8 +523,8 @@ export const sendWorkspaceInvitationEmail = async ({
     });
 };
 
-export const findInvitationByToken = async (token, workspace) => {
-    return WorkspaceInvitation.findOne({ token, workspace })
+export const findInvitationByToken = async (token) => {
+    return WorkspaceInvitation.findOne({ token })
         .populate("workspace", "name")
         .populate("invitedBy", "name email")
         .select("-token")
@@ -552,9 +552,8 @@ export const findPendingInvitationsByEmail = async (email) => {
             $gt: new Date()
         }
     })
-        .populate("workspace", "name")
+        .populate("workspace", "name color")
         .populate("invitedBy", "name email")
-        .select("-token")
         .lean();
 
 };
@@ -577,4 +576,27 @@ export const markInvitationAsAccepted = async (invitationId) => {
             new: true
         }
     );
+};
+
+export const findInvitationByIdAndWorkspace = async (invitationId, workspaceId) => {
+    return WorkspaceInvitation.findOne({
+        _id: invitationId,
+        workspace: workspaceId
+    });
+};
+
+export const markInvitationAsCancelled = async (invitationId, workspaceId) => {
+    return WorkspaceInvitation.findOneAndUpdate(
+        {
+            _id: invitationId,
+            workspace: workspaceId,
+            status: INVITATION_STATUS.PENDING
+        },
+        {
+            status: INVITATION_STATUS.CANCELLED
+        },
+        {
+            new: true
+        }
+    ).select("-token");
 };
