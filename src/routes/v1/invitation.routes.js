@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { authenticateUser } from "../../middlewares/auth.js";
-import { acceptInvitation, createInvitation, getInvitationByToken, getPendingInvitations, getWorkspaceInvitations } from "../../controllers/invitation.controller.js";
+import { acceptInvitation, cancelInvitation, createInvitation, getInvitationByToken, getPendingInvitations, getWorkspaceInvitations } from "../../controllers/invitation.controller.js";
 
 const router = Router();
 
@@ -9,8 +9,12 @@ router.post("/:workspaceId/invitations",
     createInvitation
 );
 
-router.get("/:workspaceId/invitations/:token",
+router.get("/invitations/my-pending",
     authenticateUser,
+    getPendingInvitations
+);
+
+router.get("/invitations/:token",
     getInvitationByToken
 );
 
@@ -19,15 +23,14 @@ router.get("/:workspaceId/invitations",
     getWorkspaceInvitations
 );
 
-
-router.get("/invitations/my-pending",
-    authenticateUser,
-    getPendingInvitations
-);
-
 router.post("/:workspaceId/invitations/:token/accept",
     authenticateUser,
     acceptInvitation
+);
+
+router.delete("/:workspaceId/invitations/:invitationId",
+    authenticateUser,
+    cancelInvitation
 );
 
 export default router;
