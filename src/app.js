@@ -4,6 +4,7 @@ import v1Router from "./routes/v1/index.js";
 import notFound from "./middlewares/notFound.js";
 import errorHandler from "./middlewares/errorHandler.js";
 import cookieParser from "cookie-parser";
+import { HTTP_STATUS } from "./constants/httpStatus.js";
 
 const app = express();
 
@@ -22,6 +23,14 @@ app.use(cookieParser());
 
 // express
 app.use(express.json());
+
+// health check
+app.get("/health", (req, res) => {
+    res.status(HTTP_STATUS.OK).json({
+        status: HTTP_STATUS.OK,
+        message: "ProjectFlow API is running"
+    });
+})
 
 
 // routes
