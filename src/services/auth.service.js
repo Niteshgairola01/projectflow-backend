@@ -52,8 +52,8 @@ export const loginUser = async (data) => {
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
         throw new ApiError(
-            HTTP_STATUS.BAD_REQUEST,
-            "Invalid password"
+            HTTP_STATUS.UNAUTHORIZED,
+            "Invalid email or password"
         );
     }
 
@@ -64,8 +64,11 @@ export const loginUser = async (data) => {
     // save refresh token to DB
     await updateRefreshToken(user._id, refreshToken);
 
-    // return tokens and user details (excluding password)
-    const { password: _, ...userPayload } = user.toObject ? user.toObject() : user
+    const userPayload = {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+    };
 
     return {
         accessToken,
@@ -83,11 +86,20 @@ export const refreshAccessToken = async (refreshToken) => {
     }
 
     // veify jwt sign and expireation
-    const decoded = verifyToken(refreshToken, JWT_CONFIG.JWT_REFRESH_SECRET);
+    let decoded;
+    try {
+        decoded = verifyToken(refreshToken, JWT_CONFIG.JWT_REFRESH_SECRET);
+    } catch {
+        throw new ApiError(HTTP_STATUS.UNAUTHORIZED, "Invalid or expired refresh token");
+    }
+
+    if (!decoded.userId) {
+        throw new ApiError(HTTP_STATUS.UNAUTHORIZED, "Invalid refresh token session");
+    }
 
     // fetch user from DB to check if token matches    
     const user = await findById(decoded.userId);
-    if (!user) {
+    if (!user || user.refreshToken !== refreshToken) {
         throw new ApiError(
             HTTP_STATUS.UNAUTHORIZED,
             "Invalid refresh token session"
@@ -104,11 +116,16 @@ export const refreshAccessToken = async (refreshToken) => {
 export const logOutUser = async (refreshToken) => {
     if (!refreshToken) return;
 
-    // verify token
-    const decoded = verifyToken(refreshToken, JWT_CONFIG.JWT_REFRESH_SECRET);
+    // Logout remains successful when the cookie has expired or is invalid.
+    let decoded;
+    try {
+        decoded = verifyToken(refreshToken, JWT_CONFIG.JWT_REFRESH_SECRET);
+    } catch {
+        return;
+    }
 
     if (decoded.userId) {
-        await clearRefreshToken(decoded.userId);
+        await clearRefreshToken(decoded.userId, refreshToken);
     }
 }
 

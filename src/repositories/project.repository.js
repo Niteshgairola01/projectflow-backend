@@ -12,8 +12,11 @@ export const findProjectsByWorkspaceId = (workspaceId) => {
     });
 }
 
-export const findProjectById = (projectId) => {
-    return Project.findById(projectId);
+export const findProjectById = (workspaceId, projectId) => {
+    return Project.findOne({
+        _id: projectId,
+        workspace: workspaceId
+    });
 }
 
 export const updateProject = (projectId, workspaceId, projectData,) => {

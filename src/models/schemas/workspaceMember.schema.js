@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { WORKSPACE_ROLES } from "../../constants/workspaceRoles.js";
 
 export const WorkspaceMemberSchema = new mongoose.Schema({
     user: {
@@ -13,9 +14,8 @@ export const WorkspaceMemberSchema = new mongoose.Schema({
             "OWNER",
             "ADMIN",
             "MEMBER",
-            "VIEWER"
         ],
-        default: "MEMBER",
+        default: WORKSPACE_ROLES.OWNER,
         required: true
     }
 }, {

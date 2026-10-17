@@ -40,7 +40,7 @@ export const login = asyncHandler(
             .json(
                 new ApiResponse(
                     HTTP_STATUS.OK,
-                    user,
+                    { accessToken: user.accessToken, user: user.user },
                     "User loggedin successfully"
                 )
             )

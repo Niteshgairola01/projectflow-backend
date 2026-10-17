@@ -12,3 +12,7 @@ export const findWorkspaceById = (id) => {
     return Workspace.findById(id)
         .populate("members.user", "name email")
 }
+
+export const findWorkspace = (workspaceId)=> {
+    return Workspace.findById(workspaceId);
+}
