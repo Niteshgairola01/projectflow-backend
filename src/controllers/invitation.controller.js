@@ -73,7 +73,7 @@ export const getWorkspaceInvitations = asyncHandler(
             );
         }
 
-        const invitations = await fetchWorkspaceInvitations(workspaceId);
+        const invitations = await fetchWorkspaceInvitations(workspaceId, req.user?.userId);
 
         return res
             .status(HTTP_STATUS.OK)

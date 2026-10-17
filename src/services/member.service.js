@@ -1,3 +1,6 @@
+import Workspace from "../models/workspace.model.js";
+import Project from "../models/project.model.js";
+import { findMemberPage } from "../repositories/memberList.repository.js";
 import { HTTP_STATUS } from "../constants/httpStatus.js"
 import { PERMISSIONS } from "../constants/permissions.js";
 import { PROJECT_ROLES } from "../constants/projectRoles.js";
@@ -8,7 +11,7 @@ import ApiError from "../utils/ApiError.js"
 import { authorizeProjectManagement } from "../utils/authorization/authorizeProjectManagement.js";
 import { authorizeWorkspacePermission } from "../utils/authorization/authorizeWorkspacePermission.js";
 
-export const fetchWorkspaceMembers = async (workspaceId, userId) => {
+export const fetchWorkspaceMembers = async (workspaceId, userId, filters) => {
     const workspace = await findWorkspaceById(workspaceId);
 
     if (!workspace) {
@@ -23,6 +26,8 @@ export const fetchWorkspaceMembers = async (workspaceId, userId) => {
         userId,
         PERMISSIONS.VIEW_WORKSPACE_MEMBERS
     );
+
+    if (filters) return findMemberPage(Workspace, { _id: workspaceId }, filters);
 
     const workspaceWithMembers = await findMembersByWorkspace(workspaceId, userId)
     return workspaceWithMembers.members;
@@ -179,7 +184,8 @@ export const deleteWorkspaceMember = async (
 export const fetchProjectMembers = async (
     workspaceId,
     projectId,
-    requestedBy
+    requestedBy,
+    filters
 ) => {
     const workspace = await findWorkspaceById(workspaceId);
 
@@ -219,6 +225,7 @@ export const fetchProjectMembers = async (
         );
     }
 
+    if (filters) return findMemberPage(Project, { _id: projectId, workspace: workspaceId }, filters);
     return project.members;
 };
 
