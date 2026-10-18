@@ -88,6 +88,7 @@ export const createNewInvitation = async (workspaceId, email, invitedBy) => {
         await sendWorkspaceInvitationEmail({
             to: email,
             workspaceName: workspace.name,
+            workspaceColor: workspace.color,
             inviterName: inviter.name,
             invitationToken: token,
         });
