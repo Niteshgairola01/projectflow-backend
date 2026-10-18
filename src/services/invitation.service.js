@@ -2,7 +2,7 @@ import crypto from "crypto"
 import { HTTP_STATUS } from "../constants/httpStatus.js";
 import { WORKSPACE_ROLES } from "../constants/workspaceRoles.js";
 import { findByEmail, findById } from "../repositories/auth.repository.js";
-import { createInvitation, findInvitationByIdAndWorkspace, findInvitationByToken, findPendingInvitation, findPendingInvitationsByEmail, findWorkspaceAllInvitations, markInvitationAsAccepted, markInvitationAsCancelled, sendWorkspaceInvitationEmail } from "../repositories/invitation.repository.js";
+import { deletePendingInvitation, createInvitation, findInvitationByIdAndWorkspace, findInvitationByToken, findPendingInvitation, findPendingInvitationsByEmail, findWorkspaceAllInvitations, markInvitationAsAccepted, markInvitationAsCancelled, sendWorkspaceInvitationEmail } from "../repositories/invitation.repository.js";
 import { findWorkspaceById } from "../repositories/workspace.repository.js"
 import ApiError from "../utils/ApiError.js";
 import { INVITATION_STATUS } from "../constants/invitationStatus.js";
@@ -80,17 +80,30 @@ export const createNewInvitation = async (workspaceId, email, invitedBy) => {
         status: INVITATION_STATUS.PENDING
     };
 
+    // Resolve the inviter before saving anything that would need rollback.
+    const inviter = await getUser(invitedBy);
     const invitation = await createInvitation(data);
 
-    // get inviter's details
-    const inviter = await getUser(invitedBy);
-
-    await sendWorkspaceInvitationEmail({
-        to: email,
-        workspaceName: workspace.name,
-        inviterName: inviter.name,
-        invitationToken: token,
-    });
+    try {
+        await sendWorkspaceInvitationEmail({
+            to: email,
+            workspaceName: workspace.name,
+            inviterName: inviter.name,
+            invitationToken: token,
+        });
+    } catch (deliveryError) {
+        try {
+            // Remove only this attempt, and never an invitation already accepted.
+            await deletePendingInvitation(invitation._id, workspaceId);
+        } catch {
+            console.error(`Failed to clean up invitation ${invitation._id} after email delivery failed`);
+            throw new ApiError(
+                HTTP_STATUS.INTERNAL_SERVER_ERROR,
+                "Invitation email failed and cleanup could not complete. Cancel the pending invitation before retrying."
+            );
+        }
+        throw deliveryError;
+    }
 
     return invitation;
 };
