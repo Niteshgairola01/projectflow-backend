@@ -6,6 +6,14 @@ export const createInvitation = (data) => {
     return WorkspaceInvitation.create(data);
 }
 
+export const deletePendingInvitation = (invitationId, workspaceId) => {
+    return WorkspaceInvitation.deleteOne({
+        _id: invitationId,
+        workspace: workspaceId,
+        status: INVITATION_STATUS.PENDING,
+    });
+};
+
 export const findPendingInvitation = (workspaceId, email) => {
     return WorkspaceInvitation.findOne({
         workspace: workspaceId,
