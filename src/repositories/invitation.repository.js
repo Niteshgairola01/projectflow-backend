@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { INVITATION_STATUS } from "../constants/invitationStatus.js";
 import WorkspaceInvitation from "../models/invitation.model.js"
 import { sendEmail } from "../services/email.service.js";
@@ -25,9 +26,18 @@ export const findPendingInvitation = (workspaceId, email) => {
 export const sendWorkspaceInvitationEmail = async ({
     to,
     workspaceName,
+    workspaceColor,
     inviterName,
     invitationToken,
 }) => {
+    const initial = Array.from(workspaceName?.trim() || "W")[0].toUpperCase();
+    const workspaceInitial = initial.replace(/[&<>"']/g, (character) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+    })[character]);
+    const accentColor = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(workspaceColor || "")
+        ? workspaceColor
+        : "#6C63FF";
+
     const invitationLink =
         `${process.env.CLIENT_URL}/invitations/${invitationToken}`;
 
@@ -35,6 +45,13 @@ export const sendWorkspaceInvitationEmail = async ({
         to,
 
         subject: `You're invited to join ${workspaceName} on ProjectFlow`,
+        attachments: [{
+            filename: "projectflow-logo.png",
+            path: fileURLToPath(new URL("../assets/projectflow-logo.png", import.meta.url)),
+            cid: "projectflow-logo@projectflow",
+            contentType: "image/png",
+            contentDisposition: "inline",
+        }],
 
         html: `
                 <!DOCTYPE html>
@@ -113,20 +130,8 @@ export const sendWorkspaceInvitationEmail = async ({
                                                             border="0"
                                                         >
                                                             <tr>
-                                                                <td
-                                                                    valign="middle"
-                                                                    style="
-                                                                        width: 34px;
-                                                                        height: 34px;
-                                                                        background-color: #6c63ff;
-                                                                        border-radius: 9px;
-                                                                        text-align: center;
-                                                                        font-size: 17px;
-                                                                        color: #ffffff;
-                                                                        font-weight: 700;
-                                                                    "
-                                                                >
-                                                                    P
+                                                                <td valign="middle" width="34" style="width: 34px;">
+                                                                    <img src="cid:projectflow-logo@projectflow" alt="ProjectFlow logo" width="34" height="34" style="display: block; width: 34px; height: 34px; border: 0;" />
                                                                 </td>
 
                                                                 <td
@@ -140,7 +145,7 @@ export const sendWorkspaceInvitationEmail = async ({
                                                                         letter-spacing: -0.4px;
                                                                     "
                                                                 >
-                                                                    ProjectFlow
+                                                                    Project<span style="color: #6c63ff;">Flow</span>
                                                                 </td>
                                                             </tr>
                                                         </table>
@@ -295,14 +300,14 @@ export const sendWorkspaceInvitationEmail = async ({
                                                                             height: 44px;
                                                                             line-height: 44px;
                                                                             text-align: center;
-                                                                            background-color: #6c63ff;
+                                                                            background-color: ${accentColor};
                                                                             border-radius: 12px;
                                                                             color: #ffffff;
                                                                             font-size: 18px;
                                                                             font-weight: 700;
                                                                         "
                                                                     >
-                                                                        P
+                                                                        ${workspaceInitial}
                                                                     </div>
                                                                 </td>
 

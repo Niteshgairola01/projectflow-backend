@@ -28,7 +28,7 @@ const requestGoogle = async (url, options, stage) => {
     return result;
 };
 
-export const sendEmail = async ({ to, subject, html }) => {
+export const sendEmail = async ({ to, subject, html, attachments = [] }) => {
     const required = [
         "GMAIL_CLIENT_ID",
         "GMAIL_CLIENT_SECRET",
@@ -49,6 +49,7 @@ export const sendEmail = async ({ to, subject, html }) => {
         to,
         subject,
         html,
+        attachments,
     });
 
     const token = await requestGoogle("https://oauth2.googleapis.com/token", {
