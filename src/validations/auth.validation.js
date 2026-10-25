@@ -1,5 +1,9 @@
 import z from "zod";
 
+export const forgotPasswordSchema = z.object({
+    email: z.string().trim().toLowerCase().email("Invalid email address"),
+});
+
 export const registerSchema = z.object({
     name: z
         .string()
@@ -25,7 +29,15 @@ export const loginSchema = z.object({
         .email("Invalid email address"),
     password: z
         .string()
-        .trim()
         .min(8, "Password must be at least 8 characters")
         .max(100, "Password is too long")
+});
+
+export const resetPasswordSchema = z.object({
+    token: z.string().regex(/^[a-f0-9]{64}$/, "This reset link is invalid or has expired."),
+    password: z.string()
+        .min(8, "Password must be at least 8 characters")
+        .max(100, "Password is too long")
+        .refine((value) => Buffer.byteLength(value, "utf8") <= 72,
+            "Password must be no more than 72 bytes"),
 });

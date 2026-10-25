@@ -1,3 +1,4 @@
+import { requestPasswordReset, resetPassword as resetUserPassword, PASSWORD_RESET_MESSAGE } from "../services/passwordReset.service.js";
 import { HTTP_STATUS } from "../constants/httpStatus.js";
 import { registerUser, loginUser, refreshAccessToken, logOutUser, getCurrentUser, getUser } from "../services/auth.service.js";
 import ApiError from "../utils/ApiError.js";
@@ -131,3 +132,34 @@ export const getUserById = asyncHandler(
             );
     }
 )
+
+
+export const forgotPassword = asyncHandler(
+    async (req, res) => {
+
+        await requestPasswordReset(req.body.email);
+
+        return res.status(HTTP_STATUS.OK).json(
+            new ApiResponse(
+                HTTP_STATUS.OK,
+                null,
+                PASSWORD_RESET_MESSAGE
+            )
+        );
+    }
+);
+
+
+export const resetPassword = asyncHandler(async (req, res) => {
+   
+    await resetUserPassword(req.body);
+    res.clearCookie("refreshToken", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+    });
+   
+    return res.status(HTTP_STATUS.OK).json(
+        new ApiResponse(HTTP_STATUS.OK, null, "Password updated successfully. Please sign in with your new password.")
+    );
+});

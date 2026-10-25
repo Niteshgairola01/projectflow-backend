@@ -26,10 +26,16 @@ const UserSchema = new mongoose.Schema({
         default: false,
     },
     passwordResetToken: {
-        type: String
+        type: String,
+        select: false
     },
     passwordResetExpires: {
-        type: Date
+        type: Date,
+        select: false
+    },
+    passwordResetRequestedAt: {
+        type: Date,
+        select: false
     },
     refreshToken: {
         type: String
