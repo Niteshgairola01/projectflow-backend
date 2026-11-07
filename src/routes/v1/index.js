@@ -6,6 +6,7 @@ import projectRoutes from "./project.routes.js";
 import taskRoutes from "./task.routes.js";
 import memberRoutes from "./member.routes.js";
 import invitationRoutes from "./invitation.routes.js";
+import commentRoutes from "./comment.routes.js";
 
 const router = Router();
 
@@ -16,6 +17,7 @@ router.use("/workspaces", projectRoutes);
 router.use("/workspaces", taskRoutes);
 router.use("/workspaces", memberRoutes);
 router.use("/workspaces", invitationRoutes);
+router.use("/workspaces", commentRoutes);
 
 
 export default router;

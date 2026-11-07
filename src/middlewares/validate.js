@@ -2,11 +2,11 @@ import { ZodError } from "zod";
 import ApiError from "../utils/ApiError.js"
 import { HTTP_STATUS } from "../constants/httpStatus.js";
 
-export const validate = (schema) => {
+export const validate = (schema, source = "body") => {
     return (req, res, next) => {
         try {
-            const validatedData = schema.parse(req.body);
-            req.body = validatedData;
+            const validatedData = schema.parse(req[source]);
+            req[source] = validatedData;
 
             next();
         } catch (error) {
