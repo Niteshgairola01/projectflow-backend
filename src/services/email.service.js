@@ -8,6 +8,20 @@ const composer = nodemailer.createTransport({
     newline: "windows",
 });
 
+// Only log known codes. Provider messages can contain account or request data.
+const googleFailureHints = {
+    invalid_grant: "Refresh token expired or was revoked. Reauthorize the sender and replace GMAIL_REFRESH_TOKEN. Check whether the OAuth app is in Testing mode (seven-day token expiry).",
+    invalid_client: "Check GMAIL_CLIENT_ID and GMAIL_CLIENT_SECRET against the OAuth client that issued the refresh token.",
+    unauthorized_client: "The OAuth client is not authorized for this grant. Check the client configuration.",
+    insufficientPermissions: "Reauthorize the sender with the gmail.send scope.",
+    accessNotConfigured: "Enable the Gmail API in the OAuth client's Google Cloud project.",
+    SERVICE_DISABLED: "Enable the Gmail API in the OAuth client's Google Cloud project.",
+    rateLimitExceeded: "Google rate limit reached. Check Gmail API quotas.",
+    userRateLimitExceeded: "Sender rate limit reached. Check Gmail sending limits.",
+    dailyLimitExceeded: "Daily sending quota reached. Check Gmail sending limits.",
+    authError: "Google rejected authorization. Reauthorize the sender and check the granted scopes.",
+};
+
 const requestGoogle = async (url, options, stage) => {
     let response;
     try {
@@ -16,13 +30,23 @@ const requestGoogle = async (url, options, stage) => {
             signal: AbortSignal.timeout(10_000),
         });
     } catch {
+        console.error(`Gmail ${stage} failed: connection error or timeout`);
         throw new ApiError(503, `Email ${stage} timed out or could not connect. Please try again.`);
     }
 
     const result = await response.json().catch(() => ({}));
     if (!response.ok) {
-        // Do not expose OAuth credentials, tokens, or Google's response body.
         console.error(`Gmail ${stage} failed (HTTP ${response.status})`);
+        const codes = [
+            typeof result?.error === "string" ? result.error : undefined,
+            ...(Array.isArray(result?.error?.errors) ? result.error.errors.map((error) => error?.reason) : []),
+            ...(Array.isArray(result?.error?.details) ? result.error.details.map((detail) => detail?.reason) : []),
+        ];
+        for (const code of new Set(codes)) {
+            if (Object.hasOwn(googleFailureHints, code)) {
+                console.error(`Gmail ${stage}: ${code}. ${googleFailureHints[code]}`);
+            }
+        }
         throw new ApiError(503, `Email ${stage} failed. Check the Gmail API configuration on the server.`);
     }
     return result;
