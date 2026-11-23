@@ -1,4 +1,5 @@
 import Comment from "../models/comment.model.js";
+import { buildCommentThreadResponse } from "../utils/buildCommentThreadResponse.js";
 
 export const softDeleteComment = (commentId, taskId, userId) => {
     return Comment.findOneAndUpdate(
@@ -20,11 +21,13 @@ export const addComment = (comment) => {
     return Comment.create(comment)
 };
 
-export const getCommentsByTask = (taskId) => {
-    return Comment.find({
-        taskId,
-        isDeleted: false,
-    });
+export const getCommentsByTask = async (taskId) => {
+    const comments = await Comment.find({ taskId })
+        .sort({ createdAt: 1, _id: 1 })
+        .populate("author", "name")
+        .lean();
+
+    return buildCommentThreadResponse(comments);
 };
 
 export const getCommentById = (commentId) => {
